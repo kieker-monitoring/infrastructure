@@ -20,9 +20,9 @@ Currently, the structure in the `inventory` file is as follows:
 
 #### Key files
 To set the machines up, some SSH-Keys are needed. These have to be placed inside the `files` subdirectory.
-* id_rsa.kieker-admin (Private SSH key used for logging into the machine as the `docker` user)
-* id_rsa.kieker-jenkins.pub (Public SSH key that allows the Jenkins server to connect as the `jenkins` user to execute builds)
-* id_rsa.kiekerci-github (Private SSH key that is used to push a `master` branch content that successfully passed the pipeline to the `stable` branch at github)
+* `id_rsa.kieker-admin` (Private SSH key used for logging into the machine as the `docker` user)
+* `id_rsa.kieker-jenkins.pub` (Public SSH key that allows the Jenkins server to connect as the `jenkins` user to execute builds)
+* `id_rsa.kiekerci-github` (Private SSH key that is used to push a `master` branch content that successfully passed the pipeline to the `stable` branch at github)
     
 ### Assumptions
 Currently, we assume that all machines are running Debian Jessie with a user `debian` which has the right to use `sudo` without entering a password.
