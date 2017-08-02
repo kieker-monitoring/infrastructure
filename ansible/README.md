@@ -14,7 +14,7 @@ Currently, the structure in the `inventory` file is as follows:
   * jenkins (group)
     * kieker-jenkins-worker-1
     * kieker-jenkins-worker-2
-  * livedemo (group
+  * livedemo (group)
     * kieker-live-demo-nightly
     * kieker-live-demo-release
 
