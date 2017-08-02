@@ -1,0 +1,12 @@
+[jenkins]
+kieker-jenkins-worker-1
+kieker-jenkins-worker-2
+
+[livedemo]
+kieker-live-demo-release
+kieker-live-demo-nightly
+
+[docker:children]
+jenkins
+livedemo
+

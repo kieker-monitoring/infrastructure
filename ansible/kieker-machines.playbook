@@ -1,0 +1,211 @@
+---
+- hosts: all
+  remote_user: debian
+  become: yes
+
+  tasks:
+  - name: Install Kieker Admin Pubkey
+    authorized_key:
+      user: debian
+      state: present
+      key: '{{ item }}'
+    with_file:
+      - files/id_rsa.kieker-admin.pub
+
+  - name: Update packages 
+    apt:
+      upgrade: dist
+      update_cache: yes
+
+  - name: SSHD - Ensure X11Forwarding is disabled
+    lineinfile:
+      path: /etc/ssh/sshd_config
+      regexp: '^X11Forwarding'
+      insertafter: '^#X11Forwarding'
+      line: 'X11Forwarding no'
+
+  - name: SSHD - Ensure PasswordAuthentication is disabled
+    lineinfile:
+      path: /etc/ssh/sshd_config
+      regexp: '^PasswordAuthentication'
+      insertafter: '^#PasswordAuthentication'
+      line: 'PasswordAuthentication no'
+
+  - name: SSHD - Restart SSHD
+    service:
+      name: sshd
+      state: restarted
+
+  - name: Install openntpd
+    apt:
+      name: openntpd
+
+  - name: Make sure no timeservers are set
+    lineinfile: 
+      path: /etc/openntpd/ntpd.conf
+      regexp: '^server'
+      state: absent
+
+  - name: Set Uni Stuttgart timeserver
+    blockinfile:
+      path: /etc/openntpd/ntpd.conf
+      block: |
+        server rustime01.rus.uni-stuttgart.de
+        server rustime02.rus.uni-stuttgart.de
+      insertafter: '^#server '
+
+  - name: Make sure OpenNTPD is started and enabled
+    service:
+      name: openntpd
+      enabled: yes
+      state: restarted
+
+- hosts: docker
+  remote_user: debian
+  become: yes
+
+  tasks:
+  - name: Install apt-transport-https
+    apt:
+      name: apt-transport-https
+  
+  - name: Install ca-certificates
+    apt: 
+      name: ca-certificates
+  
+  - name: Install curl
+    apt:
+      name: curl
+  
+  - name: Install gnupg2
+    apt:
+      name: gnupg2
+  
+  - name: Install software-properties-common
+    apt:
+      name: software-properties-common
+  
+  - name: Add Docker GPG key
+    apt_key:
+      url: https://download.docker.com/linux/debian/gpg
+      id: 0EBFCD88
+      state: present
+  
+  - name: Add Docker repository
+    apt_repository:
+      filename: docker
+      repo: deb [arch=amd64] https://download.docker.com/linux/debian jessie stable
+      update_cache: yes
+  
+  - name: Install docker-ce
+    apt:
+      name: docker-ce
+
+  - name: Start and enable docker service
+    service: 
+      name: docker
+      enabled: yes
+      state: started
+
+- hosts: jenkins
+  remote_user: debian
+  become: yes
+
+  tasks:
+  - name: Create Jenkins user
+    user:
+      name: jenkins
+      groups: docker
+
+  - name: Add Debian Backports repository 
+    apt_repository:
+      filename: debian-backports
+      repo: deb http://http.debian.net/debian jessie-backports main
+      update_cache: yes
+
+  - name: Install Java 8 OpenJDK
+    apt:
+      name: openjdk-8-jdk-headless
+      default_release: jessie-backports
+
+  - name: Install Pubkeys
+    authorized_key:
+      user: jenkins
+      state: present
+      key: '{{ item }}'
+    with_file:
+      - files/id_rsa.kieker-jenkins.pub
+
+  - name: Copy GPG private key to enable pushing to stable
+    copy:
+      src: files/id_rsa.kiekerci-github
+      dest: /home/jenkins/.ssh/id_rsa.kiekerci-github
+      owner: jenkins
+      group: jenkins
+      mode: 0600
+
+  - name: Assign GPG private key to github domain
+    blockinfile:
+      path: /home/jenkins/.ssh/config
+      create: yes
+      owner: jenkins
+      group: jenkins
+      mode: 0644
+      block: |
+        Host github.com
+          IdentityFile ~/.ssh/id_rsa.kiekerci-github
+
+  - name: Make sure github.com is in known_hosts file
+    lineinfile:
+      path: /home/jenkins/.ssh/known_hosts
+      line: 'github.com,192.30.253.112 ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ=='
+      regexp: '^github.com'
+      create: yes
+      owner: jenkins
+      group: jenkins
+      mode: 0644
+      
+#  - name: Run ssh-keyscan for RSA
+#    shell: ssh-keyscan -t rsa {{ ansible_default_ipv4['address'] }}
+#    register: keyscanrsa
+
+#  - name: Run ssh-keyscan for ECDSA 
+#    shell: ssh-keyscan -t ecdsa {{ ansible_default_ipv4['address'] }}
+#    register: keyscanecdsa
+
+#  - name: Run ssh-keyscan for ed25519 
+#    shell: ssh-keyscan -t ed25519 {{ ansible_default_ipv4['address'] }}
+#    register: keyscaned25519
+
+#  - name: Print keyscan (RSA) results (add this to Jenkins master known_hosts file)
+#    debug:
+#      msg: "{{ keyscanrsa.stdout }}"
+#    when: keyscanrsa is defined and keyscanrsa|succeeded
+
+#  - name: Print keyscan (ECDSA) results (add this to Jenkins master known_hosts file)
+#    debug:
+#      msg: "{{ keyscanecdsa.stdout }}"
+#    when: keyscanecdsa is defined and keyscanecdsa|succeeded
+
+#  - name: Print keyscan (ed25519) results (add this to Jenkins master known_hosts file)
+#    debug:
+#      msg: "{{ keyscaned25519.stdout }}"
+#    when: keyscaned25519 is defined and keyscaned25519|succeeded
+
+#  - name: Print credentials
+#    debug:
+#      msg: "Username: jenkins"
+
+#  - name: Print slave IP address
+#    debug:
+#      msg: "{{ ansible_default_ipv4['address'] }}"
+
+- hosts: livedemo
+  remote_user: debian
+  become: yes
+
+  tasks:
+  - name: Create livedemo user
+    user:
+      name: livedemo
+      groups: docker 
