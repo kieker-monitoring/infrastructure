@@ -116,6 +116,7 @@
     user:
       name: jenkins
       groups: docker
+      shell: /bin/bash
 
   - name: Add Debian Backports repository 
     apt_repository:
@@ -205,7 +206,27 @@
   become: yes
 
   tasks:
+  - name: Set hostname according to the Demo flavour
+    hostname:
+      name: "livedemo-{{ livedemo_flavour }}"
+ 
+  - name: Add hostname to /etc/hosts file 
+    lineinfile: 
+      path: /etc/hosts
+      regexp: '^127.0.0.1'
+      line: "127.0.0.1 localhost livedemo-{{ livedemo_flavour }}"
+ 
   - name: Create livedemo user
     user:
       name: livedemo
-      groups: docker 
+      groups: docker
+      shell: /bin/bash 
+
+  - name: Create cron-job for restarting and updating the Kieker Livedemo every day
+    cron:
+      name: livedemo-docker
+      hour: 5
+      minute: 55
+      user: livedemo 
+      job: "docker kill livedemo || sleep 10 && docker run -dti --rm --name livedemo -p 80:8080 kieker/livedemo:{{ livedemo_flavour }}"
+   

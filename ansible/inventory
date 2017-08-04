@@ -3,10 +3,11 @@ kieker-jenkins-worker-1
 kieker-jenkins-worker-2
 
 [livedemo]
-kieker-live-demo-release
-kieker-live-demo-nightly
+kieker-live-demo-release livedemo_flavour=release
+kieker-live-demo-nightly livedemo_flavour=nightly
 
 [docker:children]
 jenkins
 livedemo
+
 
