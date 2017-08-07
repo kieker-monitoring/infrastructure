@@ -60,6 +60,16 @@
       enabled: yes
       state: restarted
 
+  - name: Install fail2ban
+    apt:
+      name: fail2ban
+
+  - name: Start and enable fail2ban
+    service:
+      name: fail2ban
+      enabled: yes
+      state: started
+
 - hosts: docker
   remote_user: debian
   become: yes
@@ -228,5 +238,5 @@
       hour: 5
       minute: 55
       user: livedemo 
-      job: "docker kill livedemo || sleep 10 && docker run -dti --rm --name livedemo -p 80:8080 kieker/livedemo:{{ livedemo_flavour }}"
+      job: "docker pull kieker/livedemo:{{ livedemo_flavour }} && docker stop livedemo || sleep 5 && docker rm livedemo || sleep 5 && docker run -dti --rm --name livedemo -p 80:8080 kieker/livedemo:{{ livedemo_flavour }} && docker system prune -f"
    
