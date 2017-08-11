@@ -128,6 +128,14 @@
       groups: docker
       shell: /bin/bash
 
+  - name: Allow debian user to become Jenkins user without password
+    lineinfile:
+      path: /etc/sudoers
+      state: present
+      insertafter: '^root'
+      regexp: '^debian' 
+      line: "debian  ALL=(jenkins) NOPASSWD: ALL"
+
   - name: Add Debian Backports repository 
     apt_repository:
       filename: debian-backports
@@ -147,7 +155,7 @@
     with_file:
       - files/id_rsa.kieker-jenkins.pub
 
-  - name: Copy GPG private key to enable pushing to stable
+  - name: Copy SSH private key to enable pushing to stable
     copy:
       src: files/id_rsa.kiekerci-github
       dest: /home/jenkins/.ssh/id_rsa.kiekerci-github
@@ -155,7 +163,7 @@
       group: jenkins
       mode: 0600
 
-  - name: Assign GPG private key to github domain
+  - name: Assign SSH private key to github domain
     blockinfile:
       path: /home/jenkins/.ssh/config
       create: yes
@@ -175,7 +183,21 @@
       owner: jenkins
       group: jenkins
       mode: 0644
-      
+    
+  - name: Copy GPG key for upload to MavenCentral
+    copy: 
+      src: files/kieker-mavencentral.pub-sec.asc
+      dest: /home/jenkins/kieker-mavencentral.pub-sec.asc
+      owner: jenkins
+      group: jenkins
+      mode: 0600
+
+  - name: Install GPG key for upload to MavenCentral
+    command: gpg --import /home/jenkins/kieker-mavencentral.pub-sec.asc
+    become_user: jenkins
+    register: command_result
+    failed_when: command_result.rc != 0 and command_result.rc != 2
+ 
 #  - name: Run ssh-keyscan for RSA
 #    shell: ssh-keyscan -t rsa {{ ansible_default_ipv4['address'] }}
 #    register: keyscanrsa
