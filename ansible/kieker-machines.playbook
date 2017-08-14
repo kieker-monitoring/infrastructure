@@ -36,6 +36,10 @@
       name: sshd
       state: restarted
 
+  - name: Set timezone to Europe/Berlin
+    timezone:
+      name: Europe/Berlin
+
   - name: Install openntpd
     apt:
       name: openntpd
@@ -183,20 +187,28 @@
       owner: jenkins
       group: jenkins
       mode: 0644
-    
+   
+  - name: Make sure that the keys folder exists
+    file:
+      path: /home/jenkins/keys
+      state: directory
+      owner: jenkins
+      group: jenkins
+      mode: 0600
+ 
   - name: Copy GPG key for upload to MavenCentral
     copy: 
       src: files/kieker-mavencentral.pub-sec.asc
-      dest: /home/jenkins/kieker-mavencentral.pub-sec.asc
+      dest: /home/jenkins/keys/kieker-mavencentral.pub-sec.asc
       owner: jenkins
       group: jenkins
       mode: 0600
 
-  - name: Install GPG key for upload to MavenCentral
-    command: gpg --import /home/jenkins/kieker-mavencentral.pub-sec.asc
-    become_user: jenkins
-    register: command_result
-    failed_when: command_result.rc != 0 and command_result.rc != 2
+#  - name: Install GPG key for upload to MavenCentral
+#    command: gpg --import /home/jenkins/kieker-mavencentral.pub-sec.asc
+#    become_user: jenkins
+#    register: command_result
+#    failed_when: command_result.rc != 0 and command_result.rc != 2
  
 #  - name: Run ssh-keyscan for RSA
 #    shell: ssh-keyscan -t rsa {{ ansible_default_ipv4['address'] }}
