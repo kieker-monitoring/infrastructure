@@ -151,6 +151,21 @@
       name: openjdk-8-jdk-headless
       default_release: jessie-backports
 
+  - name: Make sure that the volume is mounted on boot
+    lineinfile:
+      path: /etc/fstab
+      state: present
+      regexp: '^/dev/vdb1'
+      line: "/dev/vdb1    /home/jenkins/workspace    ext4    rw,relatime,data=ordered    0    1"
+
+  - name: Ensure that the Jenkins workspace is owned by the Jenkins user
+    file:
+      path: /home/jenkins/workspace
+      owner: jenkins
+      group: jenkins
+      mode: 0755
+      recurse: yes
+
   - name: Install Pubkeys
     authorized_key:
       user: jenkins
