@@ -30,11 +30,8 @@
       regexp: '^PasswordAuthentication'
       insertafter: '^#PasswordAuthentication'
       line: 'PasswordAuthentication no'
-
-  - name: SSHD - Restart SSHD
-    service:
-      name: sshd
-      state: restarted
+    notify:
+      - Restart SSHD
 
   - name: Set timezone to Europe/Berlin
     timezone:
@@ -44,12 +41,6 @@
     apt:
       name: openntpd
 
-  - name: Make sure no timeservers are set
-    lineinfile: 
-      path: /etc/openntpd/ntpd.conf
-      regexp: '^server'
-      state: absent
-
   - name: Set Uni Stuttgart timeserver
     blockinfile:
       path: /etc/openntpd/ntpd.conf
@@ -57,12 +48,13 @@
         server rustime01.rus.uni-stuttgart.de
         server rustime02.rus.uni-stuttgart.de
       insertafter: '^#server '
+    notify: Restart OpenNTPD
 
-  - name: Make sure OpenNTPD is started and enabled
-    service:
+  - name: OpenNTPD started and enabled
+    service: 
       name: openntpd
       enabled: yes
-      state: restarted
+      state: started
 
   - name: Install fail2ban
     apt:
@@ -73,6 +65,17 @@
       name: fail2ban
       enabled: yes
       state: started
+
+  handlers:
+  - name: Restart SSHD
+    service:
+      name: sshd
+      state: restarted
+
+  - name: Restart OpenNTPD
+    service:
+      name: openntpd
+      state: restarted
 
 - hosts: docker
   remote_user: debian
