@@ -264,9 +264,27 @@
 
   - name: Create cron-job for restarting and updating the Kieker Livedemo every day
     cron:
-      name: livedemo-docker
+      name: livedemo-docker-daily
       hour: 5
       minute: 55
       user: livedemo 
       job: "docker pull kieker/livedemo:{{ livedemo_flavour }} && docker stop livedemo || sleep 5 && docker rm livedemo || sleep 5 && docker run -dti --rm --name livedemo -p 80:8080 kieker/livedemo:{{ livedemo_flavour }} && docker system prune -f"
+
+
+  - name: Start livedemo after reboot 
+    cron:
+      name: livedemo-docker-reboot
+      special_time: reboot
+      user: livedemo
+      job: "docker pull kieker/livedemo:{{ livedemo_flavour }} && docker stop livedemo || sleep 5 && docker rm livedemo || sleep 5 && docker run -dti --rm --name livedemo -p 80:8080 kieker/livedemo:{{ livedemo_flavour }} && docker system prune -f"
    
+- hosts: all
+  remote_user: debian
+  become: yes
+
+  tasks:
+  - name: Reboot if required
+    command: shutdown -r now 'Rebooting to complete system upgrade'
+      removes='/var/run/reboot-required'
+    ignore_errors: true
+
