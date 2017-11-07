@@ -66,6 +66,10 @@
       enabled: yes
       state: started
 
+  - name: Install Debian Goodies to check if restart is required
+    apt:
+      name: debian-goodies
+
   handlers:
   - name: Restart SSHD
     service:
