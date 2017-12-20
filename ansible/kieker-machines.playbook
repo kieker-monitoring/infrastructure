@@ -210,6 +210,16 @@
       group: jenkins
       mode: 0644
    
+  - name: Create cron-job for cleaning up Docker images (once a week at Monday 5 AM)
+    cron:
+      name: jenkins-docker-cleanup
+      weekday: 1
+      hour: 5
+      minute: 0
+      user: jenkins
+      job: "docker system prune -af"
+
+
 #  - name: Run ssh-keyscan for RSA
 #    shell: ssh-keyscan -t rsa {{ ansible_default_ipv4['address'] }}
 #    register: keyscanrsa
