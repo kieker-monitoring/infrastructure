@@ -115,7 +115,7 @@
   - name: Add Docker repository
     apt_repository:
       filename: docker
-      repo: deb [arch=amd64] https://download.docker.com/linux/debian jessie stable
+      repo: deb [arch=amd64] https://download.docker.com/linux/debian stretch stable
       update_cache: yes
   
   - name: Install docker-ce
@@ -147,23 +147,21 @@
       regexp: '^debian' 
       line: "debian  ALL=(jenkins) NOPASSWD: ALL"
 
-  - name: Add Debian Backports repository 
-    apt_repository:
-      filename: debian-backports
-      repo: deb http://http.debian.net/debian jessie-backports main
-      update_cache: yes
-
   - name: Install Java 8 OpenJDK
     apt:
       name: openjdk-8-jdk-headless
-      default_release: jessie-backports
 
-  - name: Make sure that the volume is mounted on boot
-    lineinfile:
-      path: /etc/fstab
-      state: present
-      regexp: '^/dev/vdb1'
-      line: "/dev/vdb1    /home/jenkins/workspace    ext4    rw,relatime,data=ordered    0    1"
+  - name: Create folder for workspace
+    file: 
+      path: /home/jenkins/workspace
+      state: directory
+
+  - name: Mount workspace volume
+    mount:
+      path: /home/jenkins/workspace
+      src: /dev/vdb1
+      fstype: ext4
+      state: mounted
 
   - name: Ensure that the Jenkins workspace is owned by the Jenkins user
     file:
