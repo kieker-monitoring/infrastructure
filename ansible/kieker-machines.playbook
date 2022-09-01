@@ -16,6 +16,8 @@
     apt:
       upgrade: dist
       update_cache: yes
+      autoclean: yes
+      autoremove: yes
 
   - name: SSHD - Ensure X11Forwarding is disabled
     lineinfile:
@@ -115,7 +117,7 @@
   - name: Add Docker repository
     apt_repository:
       filename: docker
-      repo: deb [arch=amd64] https://download.docker.com/linux/debian stretch stable
+      repo: deb [arch=amd64] https://download.docker.com/linux/debian buster stable
       update_cache: yes
   
   - name: Install docker-ce
@@ -147,9 +149,9 @@
       regexp: '^debian' 
       line: "debian  ALL=(jenkins) NOPASSWD: ALL"
 
-  - name: Install Java 8 OpenJDK
+  - name: Install Java 11 OpenJDK
     apt:
-      name: openjdk-8-jdk-headless
+      name: openjdk-11-jdk-headless
 
   - name: Create folder for workspace
     file: 
@@ -211,9 +213,9 @@
   - name: Create cron-job for cleaning up Docker images (once a week at Monday 5 AM)
     cron:
       name: jenkins-docker-cleanup
-      weekday: 1
-      hour: 5
-      minute: 0
+      weekday: '1'
+      hour: '5'
+      minute: '0'
       user: jenkins
       job: "docker system prune -af"
 
@@ -277,8 +279,8 @@
   - name: Create cron-job for restarting and updating the Kieker Livedemo every day
     cron:
       name: livedemo-docker-daily
-      hour: 5
-      minute: 55
+      hour: '5'
+      minute: '55'
       user: livedemo 
       job: "docker pull kieker/livedemo:{{ livedemo_flavour }} && docker stop livedemo || sleep 5 && docker rm livedemo || sleep 5 && docker run -dti --rm --name livedemo -p 80:8080 kieker/livedemo:{{ livedemo_flavour }} && docker system prune -f"
 
